@@ -90,6 +90,42 @@ export default function OpenGallery() {
   const [uploadLoading, setUploadLoading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
+  const PhotoSkeleton = () => (
+    <div className="flex flex-col group">
+      <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[40px] bg-slate-100 dark:bg-zinc-950 shadow-sm animate-pulse">
+        <div className="shimmer absolute inset-0 opacity-20 dark:opacity-10" />
+      </div>
+      <div className="mt-8 px-6 space-y-4">
+        <div className="h-6 w-3/4 rounded-lg bg-slate-100 dark:bg-zinc-950 relative overflow-hidden">
+          <div className="shimmer absolute inset-0 opacity-20 dark:opacity-10" />
+        </div>
+        <div className="flex items-center justify-between border-t border-slate-100 pt-6 dark:border-white/5 mt-6">
+          <div className="flex items-center gap-4">
+            <div className="h-11 w-11 rounded-2xl bg-slate-100 dark:bg-zinc-950 relative overflow-hidden">
+              <div className="shimmer absolute inset-0 opacity-20 dark:opacity-10" />
+            </div>
+            <div className="space-y-2">
+              <div className="h-3 w-12 rounded bg-slate-100 dark:bg-zinc-950 relative overflow-hidden">
+                <div className="shimmer absolute inset-0 opacity-20 dark:opacity-10" />
+              </div>
+              <div className="h-4 w-20 rounded bg-slate-100 dark:bg-zinc-950 relative overflow-hidden">
+                <div className="shimmer absolute inset-0 opacity-20 dark:opacity-10" />
+              </div>
+            </div>
+          </div>
+          <div className="space-y-2 flex flex-col items-end">
+            <div className="h-3 w-16 rounded bg-slate-100 dark:bg-zinc-950 relative overflow-hidden">
+              <div className="shimmer absolute inset-0 opacity-20 dark:opacity-10" />
+            </div>
+            <div className="h-4 w-24 rounded bg-slate-100 dark:bg-zinc-950 relative overflow-hidden">
+              <div className="shimmer absolute inset-0 opacity-20 dark:opacity-10" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   // Pagination & Infinite Scroll
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -419,9 +455,10 @@ export default function OpenGallery() {
       {/* Gallery Grid */}
       <main className="mx-auto max-w-7xl px-4 pb-32 sm:px-6 lg:px-8">
         {loading ? (
-          <div className="flex h-[400px] flex-col items-center justify-center gap-4">
-            <Loader2 className="animate-spin text-indigo-600" size={48} strokeWidth={3} />
-            <p className="text-sm font-bold text-slate-400 tracking-widest uppercase">Loading Gallery...</p>
+          <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: PHOTOS_LIMIT }).map((_, i) => (
+              <PhotoSkeleton key={i} />
+            ))}
           </div>
         ) : photos.length > 0 ? (
           <>
@@ -538,12 +575,13 @@ export default function OpenGallery() {
             </div>
 
             {/* Infinite Scroll Trigger */}
-            <div ref={ref} className="mt-20 flex h-20 items-center justify-center">
+            <div ref={ref} className="mt-20">
               {isFetchingMore && (
-                <div className="flex items-center gap-3 text-indigo-600">
-                  <Loader2 className="animate-spin" size={24} />
-                  <span className="text-sm font-bold tracking-widest uppercase">Discovering More...</span>
-                </div>
+                 <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 lg:grid-cols-3">
+                 {Array.from({ length: Math.min(PHOTOS_LIMIT, 3) }).map((_, i) => (
+                   <PhotoSkeleton key={i} />
+                 ))}
+               </div>
               )}
               {!hasMore && photos.length > 0 && (
                 <div className="flex flex-col items-center gap-2 text-slate-300 dark:text-zinc-700">
@@ -741,10 +779,11 @@ export default function OpenGallery() {
                           OR CLICK TO EXPLORE FILES
                         </p>
                         <div className="mt-8 flex gap-4 justify-center flex-wrap">
-                          <span className="rounded-full bg-white px-4 py-1.5 text-[10px] font-black text-slate-400 shadow-sm dark:bg-zinc-900 dark:text-zinc-600">JPG</span>
-                          <span className="rounded-full bg-white px-4 py-1.5 text-[10px] font-black text-slate-400 shadow-sm dark:bg-zinc-900 dark:text-zinc-600">PNG</span>
-                          <span className="rounded-full bg-white px-4 py-1.5 text-[10px] font-black text-slate-400 shadow-sm dark:bg-zinc-900 dark:text-zinc-600">WEBP</span>
-                          <span className="rounded-full bg-white px-4 py-1.5 text-[10px] font-black text-slate-500 shadow-md dark:bg-zinc-950 dark:text-zinc-400 border border-slate-100 dark:border-white/5">+ ALL IMAGES</span>
+                          {ACCEPTED_IMAGE_EXTENSIONS.map((ext) => (
+                            <span key={ext} className="rounded-full bg-white px-4 py-1.5 text-[10px] font-black text-slate-400 shadow-sm dark:bg-zinc-900 dark:text-zinc-600 uppercase">
+                              {ext.replace('.', '')}
+                            </span>
+                          ))}
                         </div>
                       </label>
                     </motion.div>
