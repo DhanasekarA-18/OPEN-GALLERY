@@ -161,6 +161,9 @@ export default function OpenGallery() {
         setIsAuthenticated(false);
         setUser(null);
         setIsLogoutModalOpen(false);
+        setOtp("");
+        setError("");
+        setStep(1);
       }
     } catch (err) { }
   };
@@ -577,11 +580,11 @@ export default function OpenGallery() {
             {/* Infinite Scroll Trigger */}
             <div ref={ref} className="mt-20">
               {isFetchingMore && (
-                 <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 lg:grid-cols-3">
-                 {Array.from({ length: Math.min(PHOTOS_LIMIT, 3) }).map((_, i) => (
-                   <PhotoSkeleton key={i} />
-                 ))}
-               </div>
+                <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 lg:grid-cols-3">
+                  {Array.from({ length: Math.min(PHOTOS_LIMIT, 3) }).map((_, i) => (
+                    <PhotoSkeleton key={i} />
+                  ))}
+                </div>
               )}
               {!hasMore && photos.length > 0 && (
                 <div className="flex flex-col items-center gap-2 text-slate-300 dark:text-zinc-700">
