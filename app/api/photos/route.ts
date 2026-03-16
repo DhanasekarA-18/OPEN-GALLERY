@@ -21,24 +21,24 @@ export async function POST(request: Request) {
 
     await connectDB();
 
-    const savedPhotos = [];
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const title = titles[i] || `Untitled Shot ${i + 1}`;
+    const savedPhotos = await Promise.all(
+      files.map(async (file, i) => {
+        const title = titles[i] || `Untitled Shot ${i + 1}`;
 
-      const bytes = await file.arrayBuffer();
-      const buffer = Buffer.from(bytes);
+        const bytes = await file.arrayBuffer();
+        const buffer = Buffer.from(bytes);
 
-      const newPhoto = new Photo({
-        data: buffer,
-        contentType: file.type,
-        title,
-        uploadedBy: user.email,
-      });
+        const newPhoto = new Photo({
+          data: buffer,
+          contentType: file.type,
+          title,
+          uploadedBy: user.email,
+        });
 
-      await newPhoto.save();
-      savedPhotos.push(newPhoto._id);
-    }
+        await newPhoto.save();
+        return newPhoto._id;
+      })
+    );
 
     return NextResponse.json({
       message: `${savedPhotos.length} photos saved successfully`,

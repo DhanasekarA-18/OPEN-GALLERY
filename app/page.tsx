@@ -83,11 +83,13 @@ export default function OpenGallery() {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
+  const [isDBConnected, setIsDBConnected] = useState(true);
   const [error, setError] = useState("");
 
   // Multiple Upload State
   const [uploadItems, setUploadItems] = useState<FileWithMetadata[]>([]);
   const [uploadLoading, setUploadLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
   const PhotoSkeleton = () => (
@@ -135,7 +137,18 @@ export default function OpenGallery() {
   useEffect(() => {
     checkAuth();
     fetchPhotos(1, true);
+    checkDBStatus();
   }, []);
+
+  const checkDBStatus = async () => {
+    try {
+      const res = await fetch("/api/health");
+      if (!res.ok) setIsDBConnected(false);
+      else setIsDBConnected(true);
+    } catch (e) {
+      setIsDBConnected(false);
+    }
+  };
 
   useEffect(() => {
     if (inView && hasMore && !isFetchingMore && !loading) {
@@ -195,6 +208,7 @@ export default function OpenGallery() {
   const handleDeletePhoto = async () => {
     if (!photoToDelete) return;
 
+    setDeleteLoading(true);
     try {
       const res = await fetch("/api/photos", {
         method: "DELETE",
@@ -212,6 +226,8 @@ export default function OpenGallery() {
       }
     } catch (err) {
       alert("Error deleting photo");
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -423,6 +439,31 @@ export default function OpenGallery() {
         </div>
       </nav>
 
+      {/* Database Connection Alert Banner */}
+      <AnimatePresence>
+        {!isDBConnected && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden bg-rose-500 text-white"
+          >
+            <div className="mx-auto flex max-w-7xl items-center justify-center gap-3 px-4 py-3 sm:px-6 lg:px-8">
+              <AlertCircle size={18} />
+              <span className="text-sm font-black uppercase tracking-widest">
+                Database connection failed. Some features may be unavailable.
+              </span>
+              <button
+                onClick={checkDBStatus}
+                className="ml-4 rounded-full border border-white/30 bg-white/20 px-4 py-1 text-[10px] font-black uppercase transition-all hover:bg-white hover:text-rose-500"
+              >
+                Retry Connection
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Hero Section */}
       <header className="relative mx-auto max-w-7xl px-4 py-8 text-center sm:px-6 lg:px-8">
         <div className="absolute top-0 left-1/2 -z-10 h-24 w-full -translate-x-1/2 bg-gradient-to-b from-indigo-50/30 to-transparent dark:from-indigo-950/10" />
@@ -463,10 +504,10 @@ export default function OpenGallery() {
               <PhotoSkeleton key={i} />
             ))}
           </div>
-        ) : photos.length > 0 ? (
+        ) : photos?.length > 0 ? (
           <>
             <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 lg:grid-cols-3">
-              {photos.map((photo, idx) => (
+              {photos?.map((photo, idx) => (
                 <motion.div
                   key={photo._id}
                   initial={{ opacity: 0, y: 40 }}
@@ -912,9 +953,10 @@ export default function OpenGallery() {
                 <div className="mt-8 flex flex-col gap-3">
                   <button
                     onClick={handleDeletePhoto}
-                    className="w-full rounded-xl bg-rose-500 py-3 font-semibold text-white shadow-lg shadow-rose-500/20 transition-all hover:bg-rose-600"
+                    disabled={deleteLoading}
+                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-rose-500 py-3 font-semibold text-white shadow-lg shadow-rose-500/20 transition-all hover:bg-rose-600 disabled:opacity-70"
                   >
-                    Yes, Delete Permanent
+                    {deleteLoading ? <Loader2 className="animate-spin" size={20} /> : "Yes, Delete Permanent"}
                   </button>
                   <button
                     onClick={() => {
