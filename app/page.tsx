@@ -22,6 +22,7 @@ import {
   Download
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PHOTOS_LIMIT } from "@/lib/constants";
 
 interface Photo {
   _id: string;
@@ -29,7 +30,33 @@ interface Photo {
   title: string;
   uploadedBy: string;
   createdAt: string;
+  contentType: string;
 }
+
+const getExtension = (contentType: string) => {
+  const map: Record<string, string> = {
+    'image/jpeg': 'jpg',
+    'image/png': 'png',
+    'image/webp': 'webp',
+    'image/gif': 'gif',
+    'image/svg+xml': 'svg',
+    'image/avif': 'avif',
+    'image/bmp': 'bmp',
+  };
+  return map[contentType] || contentType.split('/')[1] || 'bin';
+};
+
+const isPreviewable = (contentType: string) => {
+  return [
+    'image/jpeg',
+    'image/png',
+    'image/webp',
+    'image/gif',
+    'image/svg+xml',
+    'image/avif',
+    'image/bmp',
+  ].includes(contentType.toLowerCase());
+};
 
 interface User {
   email: string;
@@ -107,7 +134,7 @@ export default function OpenGallery() {
     else setIsFetchingMore(true);
 
     try {
-      const res = await fetch(`/api/photos?page=${pageNum}&limit=8`);
+      const res = await fetch(`/api/photos?page=${pageNum}&limit=${PHOTOS_LIMIT}`);
       const data = await res.json();
 
       if (isInitial) {
@@ -210,20 +237,13 @@ export default function OpenGallery() {
   };
 
   const addFiles = async (files: File[]) => {
-    const supportedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-    const validFiles = files.filter(file => {
-      const type = file.type.toLowerCase();
-      return supportedTypes.includes(type);
-    });
-
-    if (validFiles.length === 0) return;
+    if (files.length === 0) return;
 
     const newItems: FileWithMetadata[] = [];
-    setUploadLoading(true); // Show loader during processing
+    setUploadLoading(true);
 
     try {
-      // Process files sequentially
-      for (const file of validFiles) {
+      for (const file of files) {
         newItems.push({
           file: file,
           preview: URL.createObjectURL(file),
@@ -299,10 +319,11 @@ export default function OpenGallery() {
     }
   };
 
-  const handleDownload = (url: string, title: string) => {
+  const handleDownload = (photo: Photo) => {
     const link = document.createElement("a");
-    link.href = url;
-    link.download = `${title.replace(/\s+/g, "_") || "shot"}.jpg`;
+    link.href = photo.url;
+    const extension = getExtension(photo.contentType);
+    link.download = `${photo.title.replace(/\s+/g, "_") || "shot"}.${extension}`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -415,12 +436,26 @@ export default function OpenGallery() {
                 >
                   {/* Image Container */}
                   <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[40px] bg-slate-100 dark:bg-zinc-900 shadow-2xl transition-transform duration-500 group-hover:-translate-y-2 text-white">
-                    <img
-                      src={photo.url}
-                      alt={photo.title}
-                      className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-                      loading="lazy"
-                    />
+                    {isPreviewable(photo?.contentType) ? (
+                      <img
+                        src={photo.url}
+                        alt={photo.title}
+                        className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full flex-col items-center justify-center bg-slate-100 p-8 dark:bg-zinc-800">
+                        <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-3xl bg-white shadow-xl dark:bg-zinc-900 text-indigo-500">
+                          <AlertCircle size={40} />
+                        </div>
+                        <h4 className="text-center text-sm font-black uppercase tracking-tight text-slate-400 dark:text-zinc-500">
+                          Preview Not Supported
+                        </h4>
+                        <p className="mt-2 text-center text-[10px] font-bold uppercase tracking-widest text-slate-400/60">
+                          {photo.contentType.split('/')[1] || 'Unknown'} Format
+                        </p>
+                      </div>
+                    )}
 
                     {/* Overlay on Hover */}
                     <div className="absolute inset-0 bg-black/40 opacity-0 transition-opacity duration-300 group-hover:opacity-100 flex flex-col items-center justify-center gap-4">
@@ -431,7 +466,7 @@ export default function OpenGallery() {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleDownload(photo.url, photo.title);
+                            handleDownload(photo);
                           }}
                           className="flex h-14 w-14 items-center justify-center rounded-full bg-white/20 backdrop-blur-md border border-white/30 hover:bg-indigo-600 hover:text-white transition-all"
                         >
@@ -691,7 +726,7 @@ export default function OpenGallery() {
                     >
                       <input
                         type="file"
-                        accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                        accept="image/*"
                         multiple
                         hidden
                         id="batchFileInput"
@@ -705,10 +740,11 @@ export default function OpenGallery() {
                         <p className="mt-2 text-sm font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-widest">
                           OR CLICK TO EXPLORE FILES
                         </p>
-                        <div className="mt-8 flex gap-4 justify-center">
+                        <div className="mt-8 flex gap-4 justify-center flex-wrap">
                           <span className="rounded-full bg-white px-4 py-1.5 text-[10px] font-black text-slate-400 shadow-sm dark:bg-zinc-900 dark:text-zinc-600">JPG</span>
                           <span className="rounded-full bg-white px-4 py-1.5 text-[10px] font-black text-slate-400 shadow-sm dark:bg-zinc-900 dark:text-zinc-600">PNG</span>
                           <span className="rounded-full bg-white px-4 py-1.5 text-[10px] font-black text-slate-400 shadow-sm dark:bg-zinc-900 dark:text-zinc-600">WEBP</span>
+                          <span className="rounded-full bg-white px-4 py-1.5 text-[10px] font-black text-slate-500 shadow-md dark:bg-zinc-950 dark:text-zinc-400 border border-slate-100 dark:border-white/5">+ ALL IMAGES</span>
                         </div>
                       </label>
                     </motion.div>
@@ -723,8 +759,15 @@ export default function OpenGallery() {
                             exit={{ opacity: 0, scale: 0.9 }}
                             className="relative flex items-center gap-4 rounded-3xl border border-slate-100 bg-white p-4 shadow-xl dark:border-white/5 dark:bg-zinc-800"
                           >
-                            <div className="h-24 w-24 overflow-hidden rounded-2xl bg-slate-100 dark:bg-zinc-900 shadow-inner">
-                              <img src={item.preview} className="h-full w-full object-cover" />
+                            <div className="h-24 w-24 overflow-hidden rounded-2xl bg-slate-100 dark:bg-zinc-900 shadow-inner flex items-center justify-center">
+                              {isPreviewable(item.file.type) ? (
+                                <img src={item.preview} className="h-full w-full object-cover" />
+                              ) : (
+                                <div className="flex flex-col items-center justify-center p-2 text-center">
+                                  <AlertCircle size={24} className="text-slate-300 dark:text-zinc-700" />
+                                  <span className="mt-1 text-[8px] font-bold text-slate-400 uppercase leading-tight">No Preview</span>
+                                </div>
+                              )}
                             </div>
                             <div className="flex flex-1 flex-col pr-8">
                               <label className="text-[10px] font-black text-indigo-600 tracking-widest uppercase mb-1">Photo Title</label>
@@ -750,7 +793,7 @@ export default function OpenGallery() {
                       <label className="flex h-[130px] cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-dashed border-slate-100 bg-slate-50/50 transition-all hover:bg-white hover:shadow-xl dark:border-white/5 dark:bg-zinc-800/30">
                         <input
                           type="file"
-                          accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                          accept="image/*"
                           multiple
                           hidden
                           onChange={handleFileChange}

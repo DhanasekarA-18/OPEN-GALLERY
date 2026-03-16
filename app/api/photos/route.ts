@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Photo from '@/models/Photo';
 import { getAuthUser } from '@/lib/auth';
+import { PHOTOS_LIMIT } from '@/lib/constants';
 
 export async function POST(request: Request) {
   try {
@@ -54,7 +55,7 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '8');
+    const limit = PHOTOS_LIMIT;
     const skip = (page - 1) * limit;
 
     await connectDB();
@@ -67,6 +68,7 @@ export async function GET(request: Request) {
       title: photo.title,
       uploadedBy: photo.uploadedBy,
       createdAt: photo.createdAt,
+      contentType: photo.contentType,
       url: `data:${photo.contentType};base64,${photo.data.toString('base64')}`
     }));
 
