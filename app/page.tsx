@@ -22,7 +22,7 @@ import {
   Download
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { PHOTOS_LIMIT } from "@/lib/constants";
+import { PHOTOS_LIMIT, ACCEPTED_IMAGE_EXTENSIONS } from "@/lib/constants";
 
 interface Photo {
   _id: string;
@@ -431,7 +431,7 @@ export default function OpenGallery() {
                   key={photo._id}
                   initial={{ opacity: 0, y: 40 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: (idx % 8) * 0.1, ease: "easeOut" }}
+                  transition={{ delay: (idx % PHOTOS_LIMIT) * 0.1, ease: "easeOut" }}
                   className="group flex flex-col"
                 >
                   {/* Image Container */}
@@ -726,7 +726,7 @@ export default function OpenGallery() {
                     >
                       <input
                         type="file"
-                        accept="image/*"
+                        accept={ACCEPTED_IMAGE_EXTENSIONS.join(',')}
                         multiple
                         hidden
                         id="batchFileInput"
@@ -793,7 +793,7 @@ export default function OpenGallery() {
                       <label className="flex h-[130px] cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-dashed border-slate-100 bg-slate-50/50 transition-all hover:bg-white hover:shadow-xl dark:border-white/5 dark:bg-zinc-800/30">
                         <input
                           type="file"
-                          accept="image/*"
+                          accept={ACCEPTED_IMAGE_EXTENSIONS.join(',')}
                           multiple
                           hidden
                           onChange={handleFileChange}
